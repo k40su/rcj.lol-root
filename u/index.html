@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loading...</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #000;
+        }
+
+        #background-video {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: -2;
+        }
+
+        .background-image {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+            z-index: -2;
+        }
+
+        #enter-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            cursor: pointer;
+            transition: opacity 0.5s ease;
+        }
+
+        #enter-text {
+            font-size: 2em;
+            text-align: center;
+        }
+
+        #main-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            padding: 20px;
+            max-width: 600px;
+            width: 100%;
+            opacity: 0;
+            transform: translateY(50px);
+            transition: opacity 1s ease, transform 1s ease;
+            z-index: 1;
+        }
+
+        #main-container.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .section {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            transition: transform 0.2s ease;
+        }
+
+        #main-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #profile-pic {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            margin-bottom: 10px;
+        }
+
+        #display-name {
+            font-size: 1.5em;
+            margin: 5px 0;
+        }
+
+        #username {
+            font-size: 1.2em;
+            color: #aaa;
+            margin: 5px 0;
+        }
+
+        #description, #location, #occupation {
+            margin: 5px 0;
+        }
+
+        #music-player {
+            display: none;
+        }
+
+        #music-image {
+            width: 100px;
+            height: 100px;
+            margin-bottom: 10px;
+        }
+
+        #song-info {
+            margin-bottom: 10px;
+        }
+
+        #progress-bar {
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        #controls button {
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 1.5em;
+            cursor: pointer;
+            margin: 0 10px;
+        }
+
+        #link-section {
+            display: none;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .link-icon {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .link-icon:hover {
+            transform: scale(1.1);
+        }
+
+        @media (max-width: 600px) {
+            .section {
+                max-width: 90%;
+            }
+        }
+
+        body.custom-cursor {
+            cursor: none;
+        }
+    </style>
+</head>
+<body>
+    <video id="background-video" loop autoplay muted playsinline></video>
+    <div id="background-image" class="background-image"></div>
+
+    <div id="enter-overlay">
+        <div id="enter-text">Click to Enter</div>
+    </div>
+
+    <div id="main-container">
+        <div id="main-card" class="section">
+            <img id="profile-pic" src="" alt="Profile Picture" style="display: none;">
+            <div id="display-name"></div>
+            <div id="username"></div>
+            <div id="description"></div>
+            <div id="location"></div>
+            <div id="occupation"></div>
+        </div>
+
+        <div id="music-player" class="section">
+            <img id="music-image" src="" alt="Music Image">
+            <div id="song-info">
+                <span id="song-name"></span> - <span id="song-artist"></span>
+            </div>
+            <input type="range" id="progress-bar" min="0" max="100" value="0">
+            <div id="controls">
+                <button id="prev-btn">⏮</button>
+                <button id="play-pause-btn">▶</button>
+                <button id="next-btn">⏭</button>
+            </div>
+        </div>
+
+        <div id="link-section" class="section"></div>
+    </div>
+
+    <script>
+        const path = window.location.pathname;
+        const username = path.split('/').pop() || 'default';
+
+        const script = document.createElement('script');
+        script.src = `data/${username}.js`;
+        document.head.appendChild(script);
+
+        script.onload = function() {
+            if (!window.userData) {
+                console.error('User data not found');
+                return;
+            }
+
+            const data = window.userData;
+
+            document.title = data.display ? `${data.display} (@${data.username})` : `@${data.username}`;
+
+            if (data.background && data.background.endsWith('.mp4')) {
+                document.getElementById('background-video').src = data.background;
+                document.getElementById('background-image').style.display = 'none';
+            } else if (data.background) {
+                document.getElementById('background-image').style.backgroundImage = `url(${data.background})`;
+                document.getElementById('background-video').style.display = 'none';
+            }
+
+            if (data.profilePic) {
+                const pic = document.getElementById('profile-pic');
+                pic.src = data.profilePic;
+                pic.style.display = 'block';
+            }
+            document.getElementById('display-name').textContent = data.display || '';
+            document.getElementById('username').textContent = `@${data.username}`;
+            document.getElementById('description').textContent = data.description || '';
+            document.getElementById('location').textContent = data.location || '';
+            document.getElementById('occupation').textContent = data.occupation || '';
+
+            const musicPlayer = document.getElementById('music-player');
+            if (data.music && data.music.length > 0) {
+                musicPlayer.style.display = 'block';
+
+                const audio = new Audio();
+                let currentSongIndex = 0;
+                const loadSong = () => {
+                    const song = data.music[currentSongIndex];
+                    audio.src = song.src;
+                    document.getElementById('song-name').textContent = song.name;
+                    document.getElementById('song-artist').textContent = song.artist;
+                };
+
+                loadSong();
+
+                if (data.musicImage) {
+                    document.getElementById('music-image').src = data.musicImage;
+                }
+
+                const playPauseBtn = document.getElementById('play-pause-btn');
+                playPauseBtn.addEventListener('click', () => {
+                    if (audio.paused) {
+                        audio.play();
+                        playPauseBtn.textContent = '⏸';
+                    } else {
+                        audio.pause();
+                        playPauseBtn.textContent = '▶';
+                    }
+                });
+
+                document.getElementById('prev-btn').addEventListener('click', () => {
+                    currentSongIndex = (currentSongIndex - 1 + data.music.length) % data.music.length;
+                    loadSong();
+                    audio.play();
+                    playPauseBtn.textContent = '⏸';
+                });
+
+                document.getElementById('next-btn').addEventListener('click', () => {
+                    currentSongIndex = (currentSongIndex + 1) % data.music.length;
+                    loadSong();
+                    audio.play();
+                    playPauseBtn.textContent = '⏸';
+                });
+
+                const progressBar = document.getElementById('progress-bar');
+                audio.addEventListener('timeupdate', () => {
+                    progressBar.value = (audio.currentTime / audio.duration) * 100;
+                });
+
+                progressBar.addEventListener('input', () => {
+                    audio.currentTime = (progressBar.value / 100) * audio.duration;
+                });
+
+                window.audio = audio;
+                window.playMusicOnEnter = data.musicActive !== false;
+            }
+
+            const linkSection = document.getElementById('link-section');
+            if (data.links && data.links.length > 0) {
+                linkSection.style.display = 'flex';
+                data.links.forEach(link => {
+                    const icon = document.createElement('div');
+                    icon.classList.add('link-icon');
+                    icon.style.backgroundColor = link.color || '#fff';
+                    icon.innerHTML = getIconSVG(link.icon);
+                    icon.addEventListener('click', () => {
+                        window.open(link.url, '_blank');
+                    });
+                    linkSection.appendChild(icon);
+                });
+            }
+
+            if (data.cursor) {
+                document.body.style.cursor = `url(${data.cursor}), auto`;
+            }
+
+            const sections = document.querySelectorAll('.section');
+            sections.forEach(section => {
+                section.addEventListener('mousemove', (e) => {
+                    const rect = section.getBoundingClientRect();
+                    const x = (e.clientX - rect.left - rect.width / 2) / rect.width;
+                    const y = (e.clientY - rect.top - rect.height / 2) / rect.height;
+                    section.style.transform = `perspective(1000px) rotateY(${x * 10}deg) rotateX(${-y * 10}deg)`;
+                });
+                section.addEventListener('mouseleave', () => {
+                    section.style.transform = 'none';
+                });
+            });
+
+            const overlay = document.getElementById('enter-overlay');
+            overlay.addEventListener('click', () => {
+                overlay.style.opacity = 0;
+                setTimeout(() => overlay.style.display = 'none', 500);
+                document.getElementById('main-container').classList.add('visible');
+                if (window.playMusicOnEnter && window.audio) {
+                    window.audio.play();
+                    document.getElementById('play-pause-btn').textContent = '⏸';
+                }
+            });
+        };
+
+        function getIconSVG(iconType) {
+            if (iconType === 'discord') {
+                return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white"><path d="M20.317 4.37a19.791 19.791 0 00-4.885-1.515.074.074 0 00-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 00-5.487 0 12.64 12.64 0 00-.617-1.25.077.077 0 00-.079-.037A19.736 19.736 0 003.677 4.37.069.069 0 003.6 4.44 29.38 29.38 0 001 12.074a.073.073 0 00.022.083 19.879 19.879 0 005.89 2.977.076.076 0 00.084-.029 14.58 14.58 0 001.005-1.637.074.074 0 00-.044-.09 13.072 13.072 0 01-1.87-.824.073.073 0 01-.009-.125c.126-.093.252-.19.372-.287a.075.075 0 01.078-.01 15.621 15.621 0 0010.113 0c.024-.005.048-.004.075.01.12.098.246.195.372.288a.073.073 0 01-.006.125 13.133 13.133 0 01-1.873.822.077.077 0 00-.043.091c.263.63.52 1.267 1 1.64a.077.077 0 00.085.028 19.831 19.831 0 005.89-2.977.073.073 0 00.022-.082A29.331 29.331 0 0020.4 4.44a.07.07 0 00-.077-.07zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.418 2.157-2.418 1.21 0 2.176 1.095 2.157 2.418 0 1.333-.955 2.418-2.157 2.418zm7.965 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.418 2.157-2.418 1.21 0 2.176 1.095 2.157 2.418 0 1.333-.946 2.418-2.157 2.418z"/></svg>';
+            }
+            return '';
+        }
+    </script>
+</body>
+</html>
